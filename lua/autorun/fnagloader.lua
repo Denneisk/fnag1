@@ -11,6 +11,41 @@ function FNAGLoader()
 	return true;
 end
 
+FNAGLoader_modifieds = {}
+
+if CLIENT then
+
+local function FNAGLoader_sanitise()
+	local ply = LocalPlayer()
+	local pName = ply:Name()
+	local pID = ply:SteamID()
+	local count = 0
+	local files = 0
+	for k, _ in pairs(FNAGLoader_modifieds) do
+		local f = file.Open(k,"rb","DATA")
+		local ok, tbl, info = AdvDupe2.Decode(f:Read(f:Size()))
+		if ok == true then
+			files = files + 1
+			for kk, v in pairs(tbl.Entities) do
+				if v.code_author != nil then
+					v.code_author.name = pName
+					v.code_author.SteamID = pID
+					count = count + 1
+				end
+			end
+		end
+		AdvDupe2.Encode( tbl, info, function(data)
+			AdvDupe2.SendToClient(ply, data, 0)
+		end)
+	end
+	print("FNAGLoader sanitised "..files.." files with "..count.." entries")
+end
+
+hook.Add("InitPostEntity","FNAGLoader_sanitise",FNAGLoader_sanitise)
+	
+end
+	
+
 local files, dir = file.Find("data/advdupe2/fnag/*","LUA")
 for k, v in pairs(files) do
 	local i = string.find(v,"_",1,true)
@@ -41,6 +76,9 @@ for k, v in pairs(files) do
 			ff:Write(f:Read())
 			ff:Close()
 			f:Close()
+			--FNAGLoader_sanitise("advdupe2/fnag/"..subv..".txt")
+			FNAGLoader_modifieds["advdupe2/fnag/"..subv..".txt"] = true
+			print("FNAG Loader added/updated "..v)
 		end
 	else
 		local f = file.Open("data/advdupe2/fnag/"..v,"rb", "LUA")
@@ -49,9 +87,11 @@ for k, v in pairs(files) do
 		ff:Write(f:Read()) --This is hecka sus for large files
 		ff:Close()
 		f:Close()
+		--FNAGLoader_sanitise("advdupe2/fnag/"..subv..".txt")
+		FNAGLoader_modifieds["advdupe2/fnag/"..subv..".txt"] = true
 		--print("FNAG Loader writing "..subv..".txt, new")
+		print("FNAG Loader added/updated "..v)
 	end
-	--print("FNAG Loader processed "..v)
 end
 --print("FNAG Loader finished successfully, I hope.")
 	
