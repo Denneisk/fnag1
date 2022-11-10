@@ -11,10 +11,12 @@ function FNAGLoader()
 	return true;
 end
 
+
 FNAGLoader_modifieds = {}
 
-if CLIENT then
+--if CLIENT then
 
+--[[
 local function FNAGLoader_sanitise()
 	local ply = LocalPlayer()
 	local pName = ply:Name()
@@ -40,10 +42,34 @@ local function FNAGLoader_sanitise()
 	end
 	print("FNAGLoader sanitised "..files.." files with "..count.." entries")
 end
+]]
 
-hook.Add("InitPostEntity","FNAGLoader_sanitise",FNAGLoader_sanitise)
-	
+local function FNAGLoader_sanitise()
+	local count = 0
+	local files = 0
+	for k, _ in pairs(FNAGLoader_modifieds) do
+		local f = file.Open(k,"rb","DATA")
+		local ok, tbl, info = AdvDupe2.Decode(f:Read(f:Size()))
+		if ok == true then
+			files = files + 1
+			for kk, v in pairs(tbl.Entities) do
+				if v.code_author != nil then
+					count = count + 1
+					v.code_author = nil
+				end
+			end
+		end
+		f:Close()
+		AdvDupe2.Encode( tbl, info, function(data)
+			local f = file.Open(k,"wb","DATA")
+			f:Write(data)
+			f:Close()
+		end)
+	end
+	print("FNAGLoader sanitised "..files.." files with "..count.." entries")
 end
+	
+--end
 	
 
 local files, dir = file.Find("data/advdupe2/fnag/*","LUA")
@@ -89,8 +115,10 @@ for k, v in pairs(files) do
 		f:Close()
 		--FNAGLoader_sanitise("advdupe2/fnag/"..subv..".txt")
 		FNAGLoader_modifieds["advdupe2/fnag/"..subv..".txt"] = true
-		--print("FNAG Loader writing "..subv..".txt, new")
 		print("FNAG Loader added/updated "..v)
+	end
+	if not table.IsEmpty(FNAGLoader_modifieds) then
+		hook.Add("InitPostEntity","FNAGLoader_sanitise",FNAGLoader_sanitise)
 	end
 end
 --print("FNAG Loader finished successfully, I hope.")
